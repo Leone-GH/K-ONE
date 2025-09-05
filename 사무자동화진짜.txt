@@ -1,0 +1,475 @@
+﻿<COMPILER: v1.1.33.02>
+OnExit, Terminate
+#NoEnv
+#WinActivateForce
+#KeyHistory 0
+ListLines, Off
+SetBatchLines, -1
+Process, Priority,, High
+SetWorkingDir %A_ScriptDir%
+gosub, Virtualize
+FileInstall, logo.png, %A_Temp%\test.png
+FileInstall, save.png, %A_Temp%\test2.png
+Gui, Show, w355 h210 , 엑셀차량일지등록
+gui,Font, S10 cDefault, Arial
+gui,add, text, x10 y20 , 엑셀경로 :
+gui,add, edit, x80 y17 w220 vpath,
+gui,add,button, x308 y15 gfilepath,열기
+gui,add,checkbox, x220 y50 vcarerror,이어서 진행하기
+Gui,Add,Picture,x110 y70 ,%A_Temp%\test.png
+gui,Font, S10 cDefault, Arial
+gui,add, text, x18 y133 Cblue, Copyright 2018. 광주지사 정성환. All rights reserved.
+gui,Font, S10 cDefault, Arial
+gui,add, text, x120 y160 Cred w280 , F1: 시작 F2: 정지
+global ddate
+global starta
+global enda
+global kstart_hh
+global kstart_mm
+global kend_hh
+global kend_mm
+global endkm
+global kfar
+global work_kind
+global parkingfee
+global passfee
+global stime
+global etime
+global company
+global row
+global saverow
+row=9
+Return
+GuiClose:
+Terminate:
+DllCall("bxsdk32\BoxedAppSDK_Exit")
+DllCall("FreeLibrary", "UInt", hModule)
+ExitApp
+return
+f1::
+gui,submit,nohide
+if path=
+{
+msgbox,4096,에러,차량일지 엑셀파일 경로를 지정해주세요.
+return
+}
+IndexExcel := ComObjCreate("Excel.Application")
+IndexExcel.Workbooks.Open(path)
+IndexExcel.Visible:=true
+if carerror=1
+{
+InputBox,newrow,에러발생,이어서 진행할 행을 입력하세요`n ex) 15`n초기 설정행은 9행입니다`n반드시 숫자만 작성해주세요 , ,340,200
+if ErrorLevel
+{
+return
+}
+row:=newrow
+}
+Loop
+{
+saverow:=row
+Loop
+{
+ddate:=IndexExcel.Cells(row,1).Value
+if ddate=
+{
+row:=row-1
+}
+else
+{
+row:=saverow
+break
+}
+}
+starta:=IndexExcel.Cells(row,3).Value
+stime:=IndexExcel.Cells(row,17).Value
+stime:=RegExReplace(stime,":","")
+StringTrimRight,adjusth,stime,2
+kstart_hh:=adjusth
+StringTrimLeft,adjustm,stime,2
+kstart_mm:=adjustm
+company:=IndexExcel.Cells(row,6).Value
+if company =
+{
+msgbox,4096,완료,차량일지를 모두 등록하였습니다.
+return
+}
+enda:=IndexExcel.Cells(row,7).Value
+if (enda="본사")
+{
+enda:="광주 서구 상일로 24번길 19"
+}
+startkm:=IndexExcel.Cells(row,4).Value
+SetFormat,FLOAT,0.0
+startkm+=0
+endkm:=IndexExcel.Cells(row,8).Value
+SetFormat,FLOAT,0.0
+endkm+=0
+kfar:=IndexExcel.Cells(row,10).Value
+work_kind:=IndexExcel.Cells(row,11).Value
+parkingfee:=IndexExcel.Cells(row,15).Value
+passfee:=IndexExcel.Cells(row,16).Value
+etime:=IndexExcel.Cells(row,27).Value
+etime:=RegExReplace(etime,":","")
+StringTrimRight,adjusth,etime,2
+kend_hh:=adjusth
+StringTrimLeft,adjustm,etime,2
+kend_mm:=adjustm
+if (company="광주지사")
+{
+company:="본사(회사)"
+}
+if (company="본사")
+{
+company:="본사(회사)"
+}
+if (company="국민연금")
+{
+company:="국민연금공단"
+}
+if (company="건보")
+{
+company:="국민건강보험공단"
+}
+if (company="신보")
+{
+company:="신용보증기금"
+}
+if (company="롯데손보")
+{
+company:="롯데손해보험"
+}
+if (company="한화손보")
+{
+company:="한화손해보험"
+}
+if (work_kind="방문처리")
+{
+work_kind:="장애처리"
+}
+if (work_kind="원격처리")
+{
+work_kind:="장애처리"
+}
+if (work_kind="장비회수")
+{
+work_kind:="반납(회수)"
+}
+if (work_kind="협업")
+{
+work_kind:="업무협의"
+}
+URL	:="http://intra.k-one.co.kr/car_drive_add.asp"
+wb := WBget()
+wb.Navigate(URL)
+Progress, b w300,, 잠시만 기다려 주세요
+Progress, 90
+While(wb.busy)
+sleep,500
+Source2:=WB.document.documentElement.InnerHTML
+StringGetPos,check,Source2,본 페이지에
+check:=check+1
+check:=SubStr(Source2,check,18)
+if (check="본 페이지에 접근 권한이 없습니다")
+{
+Progress, Off
+msgbox,,,NKP가 로그아웃 되었습니다`n`n다시 로그인해주세요!
+Reload
+return
+}
+wb.document.getElementById("datepicker").value :=ddate
+{
+if kstart_hh=00
+{
+wb.document.getElementById("start_hh").value :="00"
+}
+if kstart_hh=01
+{
+wb.document.getElementById("start_hh").value :="01"
+}
+if kstart_hh=02
+{
+wb.document.getElementById("start_hh").value :="02"
+}
+if kstart_hh=03
+{
+wb.document.getElementById("start_hh").value :="03"
+}
+if kstart_hh=04
+{
+wb.document.getElementById("start_hh").value :="04"
+}
+if kstart_hh=05
+{
+wb.document.getElementById("start_hh").value :="05"
+}
+if kstart_hh=06
+{
+wb.document.getElementById("start_hh").value :="06"
+}
+if kstart_hh=07
+{
+wb.document.getElementById("start_hh").value :="07"
+}
+if kstart_hh=08
+{
+wb.document.getElementById("start_hh").value :="08"
+}
+if kstart_hh=09
+{
+wb.document.getElementById("start_hh").value :="09"
+}
+if kstart_hh > 09
+{
+wb.document.getElementById("start_hh").value :=kstart_hh
+}
+}
+{
+if kstart_mm=00
+{
+wb.document.getElementById("start_mm").value :="00"
+}
+if kstart_mm=01
+{
+wb.document.getElementById("start_mm").value :="01"
+}
+if kstart_mm=02
+{
+wb.document.getElementById("start_mm").value :="02"
+}
+if kstart_mm=03
+{
+wb.document.getElementById("start_mm").value :="03"
+}
+if kstart_mm=04
+{
+wb.document.getElementById("start_mm").value :="04"
+}
+if kstart_mm=05
+{
+wb.document.getElementById("start_mm").value :="05"
+}
+if kstart_mm=06
+{
+wb.document.getElementById("start_mm").value :="06"
+}
+if kstart_mm=07
+{
+wb.document.getElementById("start_mm").value :="07"
+}
+if kstart_mm=08
+{
+wb.document.getElementById("start_mm").value :="08"
+}
+if kstart_mm=09
+{
+wb.document.getElementById("start_mm").value :="09"
+}
+if kstart_mm > 09
+{
+wb.document.getElementById("start_mm").value :=kstart_mm
+}
+}
+{
+if kend_hh=00
+{
+wb.document.getElementById("end_hh").value :="00"
+}
+if kend_hh=01
+{
+wb.document.getElementById("end_hh").value :="01"
+}
+if kend_hh=02
+{
+wb.document.getElementById("end_hh").value :="02"
+}
+if kend_hh=03
+{
+wb.document.getElementById("end_hh").value :="03"
+}
+if kend_hh=04
+{
+wb.document.getElementById("end_hh").value :="04"
+}
+if kend_hh=05
+{
+wb.document.getElementById("end_hh").value :="05"
+}
+if kend_hh=06
+{
+wb.document.getElementById("end_hh").value :="06"
+}
+if kend_hh=07
+{
+wb.document.getElementById("end_hh").value :="07"
+}
+if kend_hh=08
+{
+wb.document.getElementById("end_hh").value :="08"
+}
+if kend_hh=09
+{
+wb.document.getElementById("end_hh").value :="09"
+}
+if kend_hh > 09
+{
+wb.document.getElementById("end_hh").value :=kend_hh
+}
+}
+{
+if kend_mm=00
+{
+wb.document.getElementById("end_mm").value :="00"
+}
+if kend_mm=01
+{
+wb.document.getElementById("end_mm").value :="01"
+}
+if kend_mm=02
+{
+wb.document.getElementById("end_mm").value :="02"
+}
+if kend_mm=03
+{
+wb.document.getElementById("end_mm").value :="03"
+}
+if kend_mm=04
+{
+wb.document.getElementById("end_mm").value :="04"
+}
+if kend_mm=05
+{
+wb.document.getElementById("end_mm").value :="05"
+}
+if kend_mm=06
+{
+wb.document.getElementById("end_mm").value :="06"
+}
+if kend_mm=07
+{
+wb.document.getElementById("end_mm").value :="07"
+}
+if kend_mm=08
+{
+wb.document.getElementById("end_mm").value :="08"
+}
+if kend_mm=09
+{
+wb.document.getElementById("end_mm").value :="09"
+}
+if kend_mm > 09
+{
+wb.document.getElementById("end_mm").value :=kend_mm
+}
+}
+wb.document.getElementById("end_km").value :=ThousandsSep(endkm)
+wb.document.getElementById("start_km").value :=ThousandsSep(startkm)
+wb.document.getElementById("far").value :=kfar
+wb.document.getElementsByName("end_company")[0].value:=company
+wb.document.getElementById("end_point").value :=enda
+wb.document.getElementsByName("run_memo")[0].value:=work_kind
+wb.document.getElementById("parking").value :=parkingfee
+wb.document.getElementById("toll").value :=passfee
+WB.Visible := true
+sleep,100
+Progress, Off
+winmove,비용 관리 시스템 - Internet Explorer,,0,0,822,650
+sleep,100
+winwait,비용 관리 시스템 - Internet Explorer,,35
+sleep,100
+ImageSearch,vx,vy,0,0,A_ScreenWidth,A_ScreenHeight, *60 %A_Temp%/test2.png
+if Errorlevel=0
+{
+vx:=vx+15
+vy:=vy+10
+ControlClick, x%vx% y%vy%,비용 관리 시스템 - Internet Explorer
+}
+Loop
+{
+WinGetTitle,title,A
+if (title="웹 페이지 메시지")
+{
+winwait,웹 페이지 메시지
+sleep,100
+controlsend,,{enter},웹 페이지 메시지
+winwait,웹 페이지 메시지
+sleep,100
+controlsend,,{enter},웹 페이지 메시지
+sleep,300
+wb.quit
+sleep,300
+break
+}
+if (title="Windows Internet Explorer")
+{
+controlsend,,{enter},Windows Internet Explorer
+sleep,100
+msgbox,0,취소,일지작성을 취소하셨습니다!,1
+return
+}
+sleep,300
+}
+WinActivate,비용 관리 시스템 - Internet Explorer
+WinActivate,NKP 시스템 - Internet Explorer
+Loop
+{
+WinGetTitle,title,ahk_class IEFrame
+if (title="비용 관리 시스템 - Internet Explorer")
+{
+break
+}
+else
+{
+controlsend,,{ctrl down},ahk_class IEFrame
+controlsend,,{tab},ahk_class IEFrame
+controlsend,,{ctrl up},ahk_class IEFrame
+sleep,30
+}
+}
+sleep,100
+controlsend,,{F5},비용 관리 시스템 - Internet Explorer
+winwait,Windows Internet Explorer,,5
+if Errorlevel=0
+{
+WinActivate,Windows Internet Explorer
+sendinput,{enter}
+}
+winmove,차량일지작성,,%titlex%,%titley%
+row++
+}
+return
+WBget()
+{
+try
+{
+wb := ComObjCreate("InternetExplorer.Application")
+return wb
+}
+catch e
+{
+wb:=""
+sleep,100
+WBget()
+}
+}
+F2::
+ExitApp
+return
+reloadd:
+Reload
+return
+filepath:
+fileselectfile, abc
+GuiControl,,path, %abc%
+return
+Virtualize:
+hModule := DllCall("LoadLibrary", str, A_ScriptDir "\bxsdk32.dll")
+DllCall("bxsdk32\BoxedAppSDK_Init")
+DllCall("bxsdk32\BoxedAppSDK_CreateVirtualDirectoryA", AStr, A_Temp, Int, 0)
+return
+ThousandsSep(x, s=",") {
+return RegExReplace(x, "(?(?<=\.)(*COMMIT)(*FAIL))\d(?=(\d{3})+(\D|$))", "$0" s)
+}P PNG
+
+
+;================= END SCRIPT ===================
